@@ -4,61 +4,53 @@ trigger:
 pool:
   vmImage: 'windows-latest'
 
-steps:
-- task: UseDotNet@2
-  displayName: 'Install .NET Core SDK'
-  inputs:
-    version: 8.x
-    performMultiLevelLookup: true
-    includePreviewVersions: true # Required for preview versions
-
 variables:
   buildConfiguration: 'Release'
 
 steps:
+- task: UseDotNet@2
+  displayName: 'Install .NET Core SDK'
+  inputs:
+    version: '8.x'
+    performMultiLevelLookup: true
+    includePreviewVersions: true
+
+# Restore dependencies
 - task: DotNetCoreCLI@2
+  displayName: 'Restore Dependencies'
   inputs:
     command: 'restore'
     feedsToUse: 'select'
-    vstsFeed: 'my-vsts-feed' # A series of numbers and letters
-steps:
+    vstsFeed: 'my-vsts-feed'  # Your VSTS feed identifier
+
+# Build the project
 - task: DotNetCoreCLI@2
-  displayName: Build
+  displayName: 'Build Project'
   inputs:
-    command: build
+    command: 'build'
     projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration)' # Update this to match your needs
-steps:
-# ...
-# do this after other tasks such as building
+    arguments: '--configuration $(buildConfiguration)'  # Corrected the variable case
+
+# Run tests
 - task: DotNetCoreCLI@2
+  displayName: 'Run Tests'
   inputs:
-    command: test
+    command: 'test'
     projects: '**/*Tests/*.csproj'
-    arguments: '--configuration $(buildConfiguration)'
+    arguments: '--configuration $(buildConfiguration)'  # Corrected the variable case
 
-steps:
-
+# Publish the project
 - task: DotNetCoreCLI@2
+  displayName: 'Publish Project'
   inputs:
-    command: publish
+    command: 'publish'
     publishWebProjects: True
-    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'  # Corrected the variable case
     zipAfterPublish: True
 
-# this code takes all the files in $(Build.ArtifactStagingDirectory) and uploads them as an artifact of your build.
+# Publish the build artifact
 - task: PublishPipelineArtifact@1
+  displayName: 'Publish Artifact'
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)' 
     artifactName: 'myWebsite'
-
-steps:
-# ...
-# do this after you've built your app, near the end of your pipeline in most cases
-# for example, you do this before you deploy to an Azure web app on Windows
-- task: DotNetCoreCLI@2
-  inputs:
-    command: publish
-    publishWebProjects: True
-    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
-    zipAfterPublish: True
